@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'eventos',
     'django_celery_results',
+    "graphene_django",
 ]
 
 MIDDLEWARE = [
@@ -127,3 +128,7 @@ REST_FRAMEWORK = {
 # Celery settings
 CELERY_BROKER_URL = config('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND')
+
+GRAPHENE = {
+    "SCHEMA": "eventos_api.schema.schema"  # Ajuste conforme o caminho do seu schema.py
+}
