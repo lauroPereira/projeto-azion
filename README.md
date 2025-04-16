@@ -1,40 +1,137 @@
-## ✨ Project: EventStream – Real-Time Event Processing with Django, Kafka & ClickHouse
+# 📡 EventStream – Real-Time Event Processing with Django, RabbitMQ & Airflow
+EventStream é uma POC prática e educativa para demonstrar conceitos modernos de engenharia de software e dados, utilizando Django, Celery, RabbitMQ e Apache Airflow.
 
-Welcome to EventStream – a hands-on, lightweight project built to showcase modern backend and data engineering skills using some of the most in-demand tools in today's cloud and distributed systems landscape.
+## 🎯 Objetivo do Projeto
+O projeto simula um fluxo completo de processamento de eventos:
+- Geração automática de eventos via Airflow (DAG periódica).
+- Armazenamento dos eventos em banco de dados PostgreSQL.
+- Encaminhamento assíncrono via fila RabbitMQ usando Celery.
+- Processamento distribuído por workers especializados.
+- Exposição via API REST e GraphQL.
 
-This application simulates a real-world architecture where events are received via a REST API, pushed through a message broker, transformed in an ETL pipeline, and served via a GraphQL API for analytical queries – all containerized and ready for Kubernetes deployment.
-Because... why just talk about your stack when you can build with it?
-<br><br>
+
+## ⚙️ Arquitetura Geral
+```
+            ┌───────────────┐
+            │ Apache Airflow│
+            └──────┬────────┘
+                   │
+                   ▼
+        ┌────────────────────┐
+        │ Django REST API    │◄───── Auth via JWT
+        └──────┬─────────────┘
+               │
+          ┌─────▼───────┐
+    ┌────>│ PostgreSQL  │<───────────────┐
+    │     └──────┬──────┘                │
+    │            │                       │
+    │     ┌──────▼────────────┐          │
+    │     │ Celery Dispatcher │          │
+    │     └──────┬──────┬─────┘          │
+    │            │      │                │
+    │ ┌──────────▼─┐  ┌─▼──────────────┐ │
+    │ │ Worker 1   │  │ Worker 2       │─┘      ┌──────┐
+    └─│ (warning)  │  │ (error + email)│───────>│ SMPT │
+      └────────────┘  └────────────────┘        └──────┘
+```
 
 ## 🛠️ Tech Stack
+- Python + Django – API REST e backend principal
+- PostgreSQL – Armazenamento transacional
+- Celery – Workers assíncronos
+- RabbitMQ – Message broker
+- Graphene (GraphQL) – API para queries analíticas
+- Apache Airflow – Orquestrador de jobs
+- Docker Compose – Infraestrutura local
+- JWT (SimpleJWT) – Autenticação segura
 
-* Python + Django (REST API, JWT Auth)
+## 🚀 Quick Start
+1. Pré-requisitos
+    - Python 3.12
+    - Docker + Docker Compose
+    - RabbitMQ, PostgreSQL
 
-* GraphQL (Graphene)
+2. Configuração do .env
+Crie um arquivo .env com:
+    ```
+    SECRET_KEY=chave_secreta
+    DEBUG=True
 
-* PostgreSQL (Transactional storage)
+    DB_NAME=eventosdb
+    DB_USER=postgres
+    DB_PASSWORD=postgres
+    DB_HOST=localhost
+    DB_PORT=5432
+    CELERY_BROKER_URL=amqp://guest:guest@localhost:5672//
+    CELERY_RESULT_BACKEND=rpc://
+    ```
 
-* ClickHouse (Analytical DB)
+3. Subir serviços com Docker
+    ```bash
+    cd eventos_api
+    docker-compose -f docker-compose.db.yml up -d
+    ```
 
-* Kafka / RabbitMQ (Message Broker)
+    Esse comando sobe:
+    - Banco PostgreSQL
+    - RabbitMQ com UI: http://localhost:15672
 
-* Apache Airflow (ETL Pipeline)
+4. Ativar ambiente virtual e instalar dependências
+    ```python
+    python -m venv venv
+    source venv/Scripts/activate  # ou source venv/bin/activate no Linux/macOS
+    pip install -r requirements.txt
+    ```
+5. Aplicar as migrações e criar usuário
+    ```python
+    python manage.py migrate
+    python manage.py createsuperuser
+    ```
 
-* Docker + Kubernetes (Deployment-ready)
+6. Iniciar o servidor Django
+    ```python
+    python manage.py runserver
+    ```
+    A API estará disponível em: http://localhost:8000/api/
 
-* Pytest (Testing)
+7. Iniciar os Workers
+    ### Worker dispatcher (local)
+    ```
+    celery -A eventos_api worker -l info -Q celery
+    ```
 
-* GitHub Actions (CI/CD)
-<br><br>
+    ### Worker especializado (warning)
+    ```
+    celery -A eventos_api worker -l info -Q warning_queue
+    ```
 
-## 🎯 Purpose of the Project
-> “Tell me about a time you had to integrate multiple services with scalability and performance in mind.” 
+    ### Worker especializado (error)
+    ```
+    celery -A eventos_api worker -l info -Q error_queue
+    ```
 
-**Here's one way to do it.**
+8. Subir o Airflow
+    ```
+    cd airflow
+    docker-compose up -d
+    ```
+    Acesse o painel: http://localhost:8080 (usuário/senha padrão: airflow / airflow)
 
-This project was created as a practical exploration of how modern systems can be integrated and deployed efficiently, using technologies widely adopted in cloud-native and event-driven architectures.
+## ✅ Funcionalidades implementadas
+- DAG gerador_eventos gera eventos com status aleatório.
+- Os eventos são armazenados via API Django protegida por JWT.
+- Os eventos com status "warning" e "error" são processados por workers distintos.
+- Os eventos "error" disparam envio de e-mail simulado.
+- Fila celery atua como dispatcher para as filas especializadas.
 
-<br><br>
+## 📌 Observações
+- **O Airflow usa host.docker.internal para se comunicar com o host (funciona em Docker Desktop Windows/macOS).**
+- **O processamento assíncrono usa filas separadas para desacoplamento total.**
+- **Os workers podem ser escalados de forma independente.**
 
-## 🚀 Try It Out (soon...)
-Deployment to a serverless edge or cloud-native platform coming soon. Stay tuned 😉
+## 📫 Contribuições
+Pull Requests e ideias são bem-vindas! Essa POC é ótima para treinar conceitos como:
+- Arquitetura orientada a eventos
+- Mensageria assíncrona
+- Monitoramento de workflows com DAGs
+- Segregação de responsabilidades por workers

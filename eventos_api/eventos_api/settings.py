@@ -14,7 +14,11 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'host.docker.internal',
+]
 
 
 # Application definition
@@ -132,3 +136,10 @@ CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND')
 GRAPHENE = {
     "SCHEMA": "eventos_api.schema.schema"  # Ajuste conforme o caminho do seu schema.py
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'teste.lauro.dev@gmail.com'
+EMAIL_HOST_PASSWORD = 'Lperer@10'
+EMAIL_USE_TLS = True

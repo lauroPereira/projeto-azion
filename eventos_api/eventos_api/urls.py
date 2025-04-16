@@ -17,12 +17,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
-from eventos.views import EventoViewSet
+from eventos.views import EventoViewSet, ErroViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from graphene_django.views import GraphQLView
 
 router = routers.DefaultRouter()
 router.register(r'eventos', EventoViewSet)
+router.register(r'erros', ErroViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
